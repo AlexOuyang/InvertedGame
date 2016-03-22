@@ -46,10 +46,9 @@ public class PlayerControl : MonoBehaviour
 	private float lastDashTime = 0;
 	// Used for determing the direction player is facing
 	private bool facingRight = true;
-	// If dashRight, then add foce to the right to dash the player.
-	private bool dashLeft = false;
-	// If dashRight, then add foce to the right to dash the player.
-	private bool dashRight = false;
+	// Used for player rolling.
+	private bool rollLeft = false;
+	private bool rollRight = false;
 	// Used to control power ups
 	private bool canRoll = true;
 	private bool _canCharge;
@@ -142,20 +141,22 @@ public class PlayerControl : MonoBehaviour
 		grounded = grounded1 || grounded2;
 
 
-		if ((Input.GetButtonDown ("Jump") || Input.GetKeyDown (KeyCode.UpArrow) || Input.GetKeyDown (KeyCode.W) || TouchInputManager.touchInputManager.SwipeUp) 
-			&& (grounded || leftWallTouched || rightWallTouched))
+		if ((Input.GetButtonDown ("Jump") || Input.GetKeyDown (KeyCode.UpArrow) || Input.GetKeyDown (KeyCode.W) || TouchInputManager.touchInputManager.SwipeUp)
+		    && (grounded || leftWallTouched || rightWallTouched))
 			jump = true;
 
 
 		// double Tap to dash
-		if ((Input.GetKey (KeyCode.D) || Input.GetKey (KeyCode.RightArrow)) &&
-		    (Input.GetKeyDown (KeyCode.LeftShift) || Input.GetKeyDown (KeyCode.RightShift)))
-			DashRight ();
+		if (((Input.GetKey (KeyCode.D) || Input.GetKey (KeyCode.RightArrow)) &&
+		    (Input.GetKeyDown (KeyCode.LeftShift) || Input.GetKeyDown (KeyCode.RightShift))) ||
+		    TouchInputManager.touchInputManager.SwipeRight)
+			RollRight ();
 
 
-		if ((Input.GetKey (KeyCode.A) || Input.GetKey (KeyCode.LeftArrow)) &&
-		    (Input.GetKeyDown (KeyCode.LeftShift) || Input.GetKeyDown (KeyCode.RightShift)))
-			DashLeft ();
+		if (((Input.GetKey (KeyCode.A) || Input.GetKey (KeyCode.LeftArrow)) &&
+			(Input.GetKeyDown (KeyCode.LeftShift) || Input.GetKeyDown (KeyCode.RightShift))) ||
+			TouchInputManager.touchInputManager.SwipeLeft)
+			RollLeft ();
 
 		// Put animations in Update() for frame consistancy
 		if (grounded) {
@@ -221,25 +222,25 @@ public class PlayerControl : MonoBehaviour
 					rigid.drag = jumpingDrag;
 
 
-//				if (dashLeft) {
-//					Debug.Log ("Dash left");
-//					if (canRoll)
-//						rigid.AddForce (new Vector2 (-dashForce, 1), ForceMode2D.Impulse);
-//					else if (_canCharge)
-//						rigid.AddForce (new Vector2 (-chargeForce, 2), ForceMode2D.Impulse);
-//
-//					dashLeft = false;
-//				}
-//
-//				if (dashRight) {
-//					Debug.Log ("Dash right");
-//					if (canRoll)
-//						rigid.AddForce (new Vector2 (dashForce, 1), ForceMode2D.Impulse);
-//					else if (_canCharge)
-//						rigid.AddForce (new Vector2 (chargeForce, 2), ForceMode2D.Impulse);
-//
-//					dashRight = false;
-//				}
+				if (rollLeft) {
+					Debug.Log ("Dash left");
+					if (canRoll)
+						rigid.AddForce (new Vector2 (-dashForce, 1), ForceMode2D.Impulse);
+					else if (_canCharge)
+						rigid.AddForce (new Vector2 (-chargeForce, 2), ForceMode2D.Impulse);
+
+					rollLeft = false;
+				}
+
+				if (rollRight) {
+					Debug.Log ("Dash right");
+					if (canRoll)
+						rigid.AddForce (new Vector2 (dashForce, 1), ForceMode2D.Impulse);
+					else if (_canCharge)
+						rigid.AddForce (new Vector2 (chargeForce, 2), ForceMode2D.Impulse);
+
+					rollRight = false;
+				}
 
 
 			}
@@ -283,26 +284,21 @@ public class PlayerControl : MonoBehaviour
 	}
 
 
-	/************************ Mobile Control  ************************/
-
-	// Called by TouchInputManager to dash left and right
-	public void DashLeft ()
+	public void RollLeft ()
 	{
 		if ((Time.time - lastDashTime) > dashCoolDownTime && direction < 0) {
-			dashLeft = true;
+			rollLeft = true;
 			lastDashTime = Time.time;
 		}
 	}
 
-	public void DashRight ()
+	public void RollRight ()
 	{
 		if ((Time.time - lastDashTime) > dashCoolDownTime && direction > 0) {
-			dashRight = true;
+			rollRight = true;
 			lastDashTime = Time.time;
 		}
 	}
-
-	/*****************************************************************/
 
 
 	void OnTriggerEnter2D (Collider2D other)

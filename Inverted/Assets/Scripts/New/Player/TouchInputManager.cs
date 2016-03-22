@@ -18,6 +18,10 @@ public class TouchInputManager : MonoBehaviour
 	private int inputDetectionRangeY1;
 	private int inputDetectionRangeY2;
 
+	// This allows faster tap but disables all other swipes because the tap is detected on touch begin, not on touch end
+	public bool tapOnly = true;
+
+
 	// Those are used for accessing swipe directions
 	public bool SwipeUp { get { return SWIPE_UP; } }
 
@@ -38,8 +42,8 @@ public class TouchInputManager : MonoBehaviour
 	private float fingerStartTime = 0.0f;
 	private Vector2 fingerStartPos = Vector2.zero;
 	private bool isSwipe = false;
-	private float minSwipeDist = 40.0f;
-	private float maxSwipeTime = 0.5f;
+	private float minSwipeDist = 30.0f;
+	private float maxSwipeTime = 0.3f;
 
 
 	void Awake ()
@@ -91,6 +95,11 @@ public class TouchInputManager : MonoBehaviour
 					isSwipe = true;
 					fingerStartTime = Time.time;
 					fingerStartPos = touch.position;
+
+					if ((touch.position.x > inputDetectionRangeX1 && touch.position.x < inputDetectionRangeX2
+					    && touch.position.y > inputDetectionRangeY1 && touch.position.y < inputDetectionRangeY2) && tapOnly)
+						TAP = true;
+					
 					break;
 					
 				case TouchPhase.Canceled:
@@ -141,7 +150,8 @@ public class TouchInputManager : MonoBehaviour
 							}
 						
 						} else {
-							TAP = true;
+							if (!tapOnly)
+								TAP = true;
 						}
 					}
 					break;

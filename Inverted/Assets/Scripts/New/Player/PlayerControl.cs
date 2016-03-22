@@ -10,8 +10,6 @@ public class PlayerControl : MonoBehaviour
 
 	/*========= Player Attributes =========*/
 
-	// In cut scene player have no spawn animation
-	public bool spawnAnimation = true;
 	// Amount of force added to move the player left and right.
 	public float moveForce = 60f;
 	// The fastest the player can travel in the x axis.
@@ -67,8 +65,6 @@ public class PlayerControl : MonoBehaviour
 	/*============= Decorations =============*/
 
 	public GameObject jumpDust;
-	private bool instantiatedDustOnce = false;
-
 	// Positional marks used to check if the player is grounded.
 	private Transform groundCheck1;
 	private Transform groundCheck2;
@@ -80,8 +76,11 @@ public class PlayerControl : MonoBehaviour
 	private Transform playerGraphics;
 	private Animator anim;
 	private Rigidbody2D rigid;
-	// Touch control
-	private CNAbstractController MovementJoystick;
+
+	/*============= Others =============*/
+	private bool instantiateDustOnce = false;
+	private bool playJumpAnimationOnce = false;
+	private float arrowShootingFreezeTime = 0.6f;
 
 
 	void Awake ()
@@ -106,6 +105,7 @@ public class PlayerControl : MonoBehaviour
 
 	void Start ()
 	{
+
 //		if (spawnAnimation) {
 //			anim.SetTrigger ("Respawn");
 //		}
@@ -141,7 +141,7 @@ public class PlayerControl : MonoBehaviour
 		grounded = grounded1 || grounded2;
 
 
-		if ((Input.GetButtonDown ("Jump") || Input.GetKeyDown (KeyCode.UpArrow) || Input.GetKeyDown (KeyCode.W) || TouchInputManager.touchInputManager.SwipeUp)
+		if ((Input.GetButtonDown ("Jump") || Input.GetKeyDown (KeyCode.UpArrow) || Input.GetKeyDown (KeyCode.W) || TouchInputManager.touchInputManager.Tap)
 		    && (grounded || leftWallTouched || rightWallTouched))
 			jump = true;
 
@@ -152,23 +152,32 @@ public class PlayerControl : MonoBehaviour
 		    TouchInputManager.touchInputManager.SwipeRight)
 			RollRight ();
 
-
 		if (((Input.GetKey (KeyCode.A) || Input.GetKey (KeyCode.LeftArrow)) &&
-			(Input.GetKeyDown (KeyCode.LeftShift) || Input.GetKeyDown (KeyCode.RightShift))) ||
-			TouchInputManager.touchInputManager.SwipeLeft)
+		    (Input.GetKeyDown (KeyCode.LeftShift) || Input.GetKeyDown (KeyCode.RightShift))) ||
+		    TouchInputManager.touchInputManager.SwipeLeft)
 			RollLeft ();
 
-		// Put animations in Update() for frame consistancy
 		if (grounded) {
-			anim.SetBool ("Jump", false);
-			if (!instantiatedDustOnce) { // Create jump dust
+			if (!instantiateDustOnce) { // Create jump dust
 				Instantiate (jumpDust, new Vector3 (transform.position.x, transform.position.y - 1f, transform.position.z), Quaternion.identity);
-				instantiatedDustOnce = true;
+				instantiateDustOnce = true;
 			}
+			playJumpAnimationOnce = false;
 		} else {
-			anim.SetBool ("Jump", true);
-			instantiatedDustOnce = false;
+			instantiateDustOnce = false;
 		}
+
+		if(Input.GetKeyDown(KeyCode.X)){
+			anim.SetTrigger("Shooting");
+			StartCoroutine("ShootArrow");
+		}
+
+		// Used to prevent jumping animation from overriding Shooting animation
+		if (freeze)
+			anim.SetBool("CanJump", false);
+		else
+			anim.SetBool("CanJump", true);
+		
 
 		// Cloaking ability change player color
 		//		if (_canCloak) {
@@ -188,7 +197,13 @@ public class PlayerControl : MonoBehaviour
 				float mobile_control_h = CNJoystick.joystick.GetAxis ("Horizontal");
 				float h = (Mathf.Abs (mobile_control_h) > 0.05) ? mobile_control_h : Input.GetAxis ("Horizontal");
 
+				if (h > 0.05f)
+					h = 0.9f;
+				else if (h < -0.05f)
+					h = -0.9f;
+				
 				anim.SetFloat ("Speed", Mathf.Abs (h));
+
 
 
 				// If the player is changing direction or hasn't reached maxSpeed, allow add force 
@@ -214,13 +229,18 @@ public class PlayerControl : MonoBehaviour
 					jump = false;
 				}
 					
-
+				// The playerVelocityY determines whether the player is jumping up or falling down.
+				float playerVelocityY = rigid.velocity.y;
 				//decrease the linearDrag if the player is jumping
-				if (grounded)
+				if (grounded) {
+//					anim.SetBool ("Jump", false);
+					anim.SetFloat ("PlayerJumpUpSpeed", 0f);
 					rigid.drag = movingDrag;
-				else
+				} else {
+//						anim.SetBool ("Jump", true);
+					anim.SetFloat ("PlayerJumpUpSpeed", playerVelocityY);
 					rigid.drag = jumpingDrag;
-
+				}
 
 				if (rollLeft) {
 					Debug.Log ("Dash left");
@@ -251,6 +271,15 @@ public class PlayerControl : MonoBehaviour
 				Destroy (GetComponent<Collider2D> ());
 			}
 		}
+	}
+
+
+	void OnTriggerEnter2D (Collider2D other)
+	{
+	}
+
+	void OnCollisionEnter2D (Collision2D coll)
+	{
 	}
 
 	public void Death ()
@@ -301,18 +330,6 @@ public class PlayerControl : MonoBehaviour
 	}
 
 
-	void OnTriggerEnter2D (Collider2D other)
-	{
-
-
-	}
-
-	void OnCollisionEnter2D (Collision2D coll)
-	{
-
-	}
-
-
 	// Called by scene loader
 	public void EndScene (bool playEndSceneAudio)
 	{
@@ -331,36 +348,28 @@ public class PlayerControl : MonoBehaviour
 
 	void Flip ()
 	{
+		Debug.Log(playerGraphics.localScale.x);
 		direction *= -1;
 		facingRight = !facingRight;
-		Vector3 theScale = playerGraphics.localScale;
+//		Vector3 theScale = playerGraphics.localScale;
+//		theScale.x *= -1;
+//		playerGraphics.localScale.x *= -1;
+		Vector3 theScale = this.transform.localScale;
 		theScale.x *= -1;
-		playerGraphics.localScale = theScale;
+		this.transform.localScale = theScale;
+	}
+
+	IEnumerator ShootArrow ()
+	{
+		freeze = true;
+		yield return new WaitForSeconds (arrowShootingFreezeTime);
+		freeze = false;
 	}
 
 	IEnumerator DestroySelf ()
 	{
 		yield return new WaitForSeconds (respawnTime);
 		Transform.Destroy (transform.gameObject);
-	}
-
-	void DashPowerUp ()
-	{
-		canRoll = true;
-
-		Debug.Log ("Switched to dash power up");
-		// Dash power up has shorter charging time, but less dashing power
-		dashCoolDownTime = 0.7f;
-	}
-
-	// Charge or Long dash
-	void ChargePowerUp ()
-	{
-		_canCharge = true;
-
-		Debug.Log ("Switched to charge power up");
-		// Charge power up has a longer cool down time
-		dashCoolDownTime = 3f;
 	}
 
 }

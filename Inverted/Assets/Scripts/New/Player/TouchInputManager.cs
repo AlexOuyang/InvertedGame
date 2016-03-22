@@ -8,7 +8,7 @@ using UnityEditor;
 [InitializeOnLoad]
 public class TouchInputManager : MonoBehaviour
 {
-	public static TouchInputManager manager;
+	public static TouchInputManager touchInputManager;
 
 	// The InputDetectionRange defines a space on the screen in which user inputs will be detected
 	public bool InputDetectionLeftScreen = false;
@@ -44,7 +44,7 @@ public class TouchInputManager : MonoBehaviour
 
 	void Awake ()
 	{
-		manager = this;
+		touchInputManager = this;
 	
 	}
 

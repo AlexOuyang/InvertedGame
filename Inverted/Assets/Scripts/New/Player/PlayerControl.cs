@@ -103,13 +103,6 @@ public class PlayerControl : MonoBehaviour
 		else
 			Debug.Log ("No SpawnLocation found");
 
-
-		// Mobile Control, register touch inputs on start
-		MovementJoystick = GameObject.Find ("JoystickCamera").transform.FindChild ("Joystick").GetComponent<CNJoystick> ();
-		if (MovementJoystick == null)
-			Debug.Log ("Can't find Joystick in the scene");
-
-
 	}
 
 	void Start ()
@@ -148,11 +141,9 @@ public class PlayerControl : MonoBehaviour
 			                        1 << LayerMask.NameToLayer ("Object")); 
 		grounded = grounded1 || grounded2;
 
-		if (TouchInputManager.manager.SwipeUp)
-			Debug.Log ("Can jump!!!");
 
-
-		if ((Input.GetButtonDown ("Jump") || Input.GetKeyDown (KeyCode.UpArrow) || Input.GetKeyDown (KeyCode.W)) && (grounded || leftWallTouched || rightWallTouched))
+		if ((Input.GetButtonDown ("Jump") || Input.GetKeyDown (KeyCode.UpArrow) || Input.GetKeyDown (KeyCode.W) || TouchInputManager.touchInputManager.SwipeUp) 
+			&& (grounded || leftWallTouched || rightWallTouched))
 			jump = true;
 
 
@@ -193,7 +184,7 @@ public class PlayerControl : MonoBehaviour
 	{
 		if (!died) {
 			if (!freeze) {
-				float mobile_control_h = MovementJoystick.GetAxis ("Horizontal");
+				float mobile_control_h = CNJoystick.joystick.GetAxis ("Horizontal");
 				float h = (Mathf.Abs (mobile_control_h) > 0.05) ? mobile_control_h : Input.GetAxis ("Horizontal");
 
 				anim.SetFloat ("Speed", Mathf.Abs (h));

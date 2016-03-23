@@ -43,7 +43,7 @@ public class SceneLoader : MonoBehaviour
 			if (ScreenFader.fader != null)
 				ScreenFader.fader.FadeToBlack ();
 
-			PlayerControl.player.EndScene (endSceneMusic);
+			PlayerControl.Player.EndScene (endSceneMusic);
 			if (endSceneMusic) {
 				StartCoroutine (LoadAnotherScene (loadingTime));
 			} else {
@@ -66,7 +66,7 @@ public class SceneLoader : MonoBehaviour
 
 		if (ScreenFader.fader != null)
 			ScreenFader.fader.FadeToBlack ();
-		PlayerControl.player.EndScene (endSceneMusic);
+		PlayerControl.Player.EndScene (endSceneMusic);
 		if (endSceneMusic) {
 			StartCoroutine (LoadAnotherScene (loadingTime));
 		} else {
@@ -92,7 +92,7 @@ public class SceneLoader : MonoBehaviour
 		if (ScreenFader.fader != null)
 			ScreenFader.fader.FadeToBlack ();
 				
-		PlayerControl.player.EndScene (endSceneMusic);
+		PlayerControl.Player.EndScene (endSceneMusic);
 		if (endSceneMusic) {
 			StartCoroutine (LoadAnotherScene (loadingTime));
 		} else {

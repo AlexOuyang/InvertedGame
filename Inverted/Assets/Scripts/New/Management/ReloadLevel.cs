@@ -15,7 +15,7 @@ public class ReloadLevel : MonoBehaviour
 	// Update is called once per frame
 	void Update ()
 	{
-		if (PlayerControl.player.died) {
+		if (PlayerControl.Player.died) {
 			StartCoroutine ("ReloadGame");
 		}
 

@@ -8,12 +8,12 @@ public class RockFall : MonoBehaviour
 		public GameObject rockFall;
 		public float rockFallWaitTime = 0.4f;
 		public bool isSpecialRock = false;
-		private Rigidbody2D _rigid;
+		private Rigidbody2D _rigidbody;
 		private bool onlyTouchRockOnce = true;
 		// Use this for initialization
 		void Start ()
 		{
-				_rigid = GetComponent<Rigidbody2D> ();
+				_rigidbody = GetComponent<Rigidbody2D> ();
 		}
 	
 		// Update is called once per frame
@@ -36,7 +36,7 @@ public class RockFall : MonoBehaviour
 		IEnumerator RockFallDown ()
 		{
 				yield return new WaitForSeconds (rockFallWaitTime);
-				_rigid.isKinematic = false;
+				_rigidbody.isKinematic = false;
 				// First disable the water Splatter 
 				transform.GetChild (1).gameObject.SetActive (false);
 				transform.GetChild (0).gameObject.SetActive (false);

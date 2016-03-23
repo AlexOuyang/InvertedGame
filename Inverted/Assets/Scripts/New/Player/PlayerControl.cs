@@ -5,7 +5,7 @@ using System.Collections;
 public class PlayerControl : MonoBehaviour
 {
 	// Static reference to the playerControl script
-	public static PlayerControl player;
+	public static PlayerControl Player;
 
 
 	/*========= Player Attributes =========*/
@@ -40,15 +40,17 @@ public class PlayerControl : MonoBehaviour
 	public float direction = 1.0f;
 	// The cool down time it takes for the player to reuse dash
 	public float dashCoolDownTime = 1.0f;
+
+
 	// Used for calculating the next dash time
-	private float lastDashTime = 0;
+	private float _lastDashTime = 0;
 	// Used for determing the direction player is facing
-	private bool facingRight = true;
+	private bool _facingRight = true;
 	// Used for player rolling.
-	private bool rollLeft = false;
-	private bool rollRight = false;
+	private bool _rollLeft = false;
+	private bool _rollRight = false;
 	// Used to control power ups
-	private bool canRoll = true;
+	private bool _canRoll = true;
 	private bool _canCharge;
 
 
@@ -62,44 +64,51 @@ public class PlayerControl : MonoBehaviour
 	public AudioClip deathAudio;
 	public AudioClip endSceneAudio;
 
-	/*============= Decorations =============*/
 
+	/*============= Public Objects =============*/
+
+	public GameObject arrow;
 	public GameObject jumpDust;
+
+	// Used to launch the arrow
+	private Transform _arrowLauncher;
 	// Positional marks used to check if the player is grounded.
-	private Transform groundCheck1;
-	private Transform groundCheck2;
+	private Transform _groundCheck1;
+	private Transform _groundCheck2;
 	// A positional mark where to check if the player is touching the left wall.
-	private Transform leftWallJumpCheck;
+	private Transform _leftWallJumpCheck;
 	// A positional mark where to check if the player is touching the right wall.
-	private Transform rightWallJumpCheck;
+	private Transform _rightWallJumpCheck;
 	// Reference to the player's PlayerGraphics child object, which holds sprite renderer and animator
-	private Transform playerGraphics;
-	private Animator anim;
-	private Rigidbody2D rigid;
+	private Transform _playerGraphics;
+	private Animator _anim;
+	private Rigidbody2D _rigidbody;
 
 	/*============= Others =============*/
-	private bool instantiateDustOnce = false;
-	private bool playJumpAnimationOnce = false;
-	private float arrowShootingFreezeTime = 0.6f;
+	private bool _instantiateDustOnce = false;
+	private float _arrowShootingFreezeTime = 0.6f;
+	private bool _canShootArrow = true;
 
 
 	void Awake ()
 	{
-		player = this;
+		Player = this;
 
-		groundCheck1 = transform.Find ("GroundCheck1");
-		groundCheck2 = transform.Find ("GroundCheck2");
-		leftWallJumpCheck = transform.Find ("WallJumpLeft");
-		rightWallJumpCheck = transform.Find ("WallJumpRight");
+		_groundCheck1 = transform.Find ("GroundCheck1");
+		_groundCheck2 = transform.Find ("GroundCheck2");
+		_leftWallJumpCheck = transform.Find ("WallJumpLeft");
+		_rightWallJumpCheck = transform.Find ("WallJumpRight");
 
-		playerGraphics = transform.FindChild ("PlayerGraphics");
-		anim = playerGraphics.GetComponent<Animator> ();
-		rigid = GetComponent<Rigidbody2D> ();
+		_playerGraphics = transform.FindChild ("PlayerGraphics");
+		_anim = _playerGraphics.GetComponent<Animator> ();
+		_rigidbody = GetComponent<Rigidbody2D> ();
 
 		if (!GameObject.FindGameObjectWithTag ("SpawnLocation"))
 			transform.position = GameObject.FindGameObjectWithTag ("SpawnLocation").transform.position;
 		else
 			Debug.Log ("No SpawnLocation found");
+
+		_arrowLauncher = transform.FindChild("ArrowLauncher");
 
 	}
 
@@ -120,22 +129,22 @@ public class PlayerControl : MonoBehaviour
 		// The player is grounded if a linecast to the groundcheck position hits anything on the ground layer.
 		bool grounded1 = Physics2D.Linecast (
 			                 transform.position, 
-			                 groundCheck1.position, 
+			                 _groundCheck1.position, 
 			                 1 << LayerMask.NameToLayer ("Ground") |
 			                 1 << LayerMask.NameToLayer ("Object"));  
 		bool grounded2 = Physics2D.Linecast (
 			                 transform.position, 
-			                 groundCheck2.position, 
+			                 _groundCheck2.position, 
 			                 1 << LayerMask.NameToLayer ("Ground") |
 			                 1 << LayerMask.NameToLayer ("Object"));  
 		bool leftWallTouched = Physics2D.Linecast (
 			                       transform.position, 
-			                       leftWallJumpCheck.position, 
+			                       _leftWallJumpCheck.position, 
 			                       1 << LayerMask.NameToLayer ("Ground") |
 			                       1 << LayerMask.NameToLayer ("Object"));  
 		bool rightWallTouched = Physics2D.Linecast (
 			                        transform.position, 
-			                        rightWallJumpCheck.position, 
+			                        _rightWallJumpCheck.position, 
 			                        1 << LayerMask.NameToLayer ("Ground") |
 			                        1 << LayerMask.NameToLayer ("Object")); 
 		grounded = grounded1 || grounded2;
@@ -150,33 +159,34 @@ public class PlayerControl : MonoBehaviour
 		if (((Input.GetKey (KeyCode.D) || Input.GetKey (KeyCode.RightArrow)) &&
 		    (Input.GetKeyDown (KeyCode.LeftShift) || Input.GetKeyDown (KeyCode.RightShift))) ||
 		    TouchInputManager.touchInputManager.SwipeRight)
-			RollRight ();
+			rollRight ();
 
 		if (((Input.GetKey (KeyCode.A) || Input.GetKey (KeyCode.LeftArrow)) &&
 		    (Input.GetKeyDown (KeyCode.LeftShift) || Input.GetKeyDown (KeyCode.RightShift))) ||
 		    TouchInputManager.touchInputManager.SwipeLeft)
-			RollLeft ();
+			rollLeft ();
 
 		if (grounded) {
-			if (!instantiateDustOnce) { // Create jump dust
+			if (!_instantiateDustOnce) { // Create jump dust
 				Instantiate (jumpDust, new Vector3 (transform.position.x, transform.position.y - 1f, transform.position.z), Quaternion.identity);
-				instantiateDustOnce = true;
+				_instantiateDustOnce = true;
 			}
-			playJumpAnimationOnce = false;
 		} else {
-			instantiateDustOnce = false;
+			_instantiateDustOnce = false;
 		}
 
-		if(Input.GetKeyDown(KeyCode.X)){
-			anim.SetTrigger("Shooting");
-			StartCoroutine("ShootArrow");
+		if (Input.GetKeyDown (KeyCode.X) && _canShootArrow) {
+			_anim.SetTrigger ("Shooting");
+			StartCoroutine ("shootArrow");
+			GameObject arrowShot = Instantiate (arrow, new Vector3 (_arrowLauncher.position.x, _arrowLauncher.position.y, _arrowLauncher.position.z), Quaternion.identity) as GameObject;
+			arrowShot.GetComponent<ArrowShooting>().Flip(this.direction);
 		}
 
 		// Used to prevent jumping animation from overriding Shooting animation
 		if (freeze)
-			anim.SetBool("CanJump", false);
+			_anim.SetBool ("CanJump", false);
 		else
-			anim.SetBool("CanJump", true);
+			_anim.SetBool ("CanJump", true);
 		
 
 		// Cloaking ability change player color
@@ -197,26 +207,26 @@ public class PlayerControl : MonoBehaviour
 				float mobile_control_h = CNJoystick.joystick.GetAxis ("Horizontal");
 				float h = (Mathf.Abs (mobile_control_h) > 0.05) ? mobile_control_h : Input.GetAxis ("Horizontal");
 
-				if (h > 0.05f)
-					h = 0.9f;
-				else if (h < -0.05f)
-					h = -0.9f;
-				
-				anim.SetFloat ("Speed", Mathf.Abs (h));
+//				if (h > 0.05f)
+//					h = 0.9f;
+//				else if (h < -0.05f)
+//					h = -0.9f;
+//				
+				_anim.SetFloat ("Speed", Mathf.Abs (h));
 
 
 
 				// If the player is changing direction or hasn't reached maxSpeed, allow add force 
-				if (h * rigid.velocity.x < maxSpeed)
-					rigid.AddForce (Vector2.right * h * moveForce);
+				if (h * _rigidbody.velocity.x < maxSpeed)
+					_rigidbody.AddForce (Vector2.right * h * moveForce);
 
 				// If the player's horizontal velocity is greater than the maxSpeed, set the velocity to the maxSpeed
-				if (Mathf.Abs (rigid.velocity.x) > maxSpeed)
-					rigid.velocity = new Vector2 (Mathf.Sign (rigid.velocity.x) * maxSpeed, rigid.velocity.y);
+				if (Mathf.Abs (_rigidbody.velocity.x) > maxSpeed)
+					_rigidbody.velocity = new Vector2 (Mathf.Sign (_rigidbody.velocity.x) * maxSpeed, _rigidbody.velocity.y);
 
-				if (h > 0 && !facingRight)
+				if (h > 0 && !_facingRight)
 					Flip ();
-				else if (h < 0 && facingRight)
+				else if (h < 0 && _facingRight)
 					Flip ();
 
 
@@ -224,42 +234,40 @@ public class PlayerControl : MonoBehaviour
 					// Play a jump audio clip.
 					audioEffects.clip = jumpAudio;
 					audioEffects.Play ();
-					rigid.AddForce (new Vector2 (0f, jumpForce));
+					_rigidbody.AddForce (new Vector2 (0f, jumpForce));
 					//rigidbody2D.AddForce(new Vector2(jumpForce * direction /2, jumpForce));
 					jump = false;
 				}
 					
 				// The playerVelocityY determines whether the player is jumping up or falling down.
-				float playerVelocityY = rigid.velocity.y;
+				float playerVelocityY = _rigidbody.velocity.y;
 				//decrease the linearDrag if the player is jumping
 				if (grounded) {
 //					anim.SetBool ("Jump", false);
-					anim.SetFloat ("PlayerJumpUpSpeed", 0f);
-					rigid.drag = movingDrag;
+					_anim.SetFloat ("PlayerJumpUpSpeed", 0f);
+					_rigidbody.drag = movingDrag;
 				} else {
 //						anim.SetBool ("Jump", true);
-					anim.SetFloat ("PlayerJumpUpSpeed", playerVelocityY);
-					rigid.drag = jumpingDrag;
+					_anim.SetFloat ("PlayerJumpUpSpeed", playerVelocityY);
+					_rigidbody.drag = jumpingDrag;
 				}
 
-				if (rollLeft) {
-					Debug.Log ("Dash left");
-					if (canRoll)
-						rigid.AddForce (new Vector2 (-dashForce, 1), ForceMode2D.Impulse);
+				if (_rollLeft) {
+					if (_canRoll)
+						_rigidbody.AddForce (new Vector2 (-dashForce, 1), ForceMode2D.Impulse);
 					else if (_canCharge)
-						rigid.AddForce (new Vector2 (-chargeForce, 2), ForceMode2D.Impulse);
+						_rigidbody.AddForce (new Vector2 (-chargeForce, 2), ForceMode2D.Impulse);
 
-					rollLeft = false;
+					_rollLeft = false;
 				}
 
-				if (rollRight) {
-					Debug.Log ("Dash right");
-					if (canRoll)
-						rigid.AddForce (new Vector2 (dashForce, 1), ForceMode2D.Impulse);
+				if (_rollRight) {
+					if (_canRoll)
+						_rigidbody.AddForce (new Vector2 (dashForce, 1), ForceMode2D.Impulse);
 					else if (_canCharge)
-						rigid.AddForce (new Vector2 (chargeForce, 2), ForceMode2D.Impulse);
+						_rigidbody.AddForce (new Vector2 (chargeForce, 2), ForceMode2D.Impulse);
 
-					rollRight = false;
+					_rollRight = false;
 				}
 
 
@@ -267,7 +275,7 @@ public class PlayerControl : MonoBehaviour
 		} else {
 			// If the player dies and falls on the ground freeze the player
 			if (grounded) {
-				rigid.isKinematic = true;
+				_rigidbody.isKinematic = true;
 				Destroy (GetComponent<Collider2D> ());
 			}
 		}
@@ -282,16 +290,68 @@ public class PlayerControl : MonoBehaviour
 	{
 	}
 
+
+	void rollLeft ()
+	{
+		if ((Time.time - _lastDashTime) > dashCoolDownTime && direction < 0) {
+			_rollLeft = true;
+			_lastDashTime = Time.time;
+		}
+	}
+
+	void rollRight ()
+	{
+		if ((Time.time - _lastDashTime) > dashCoolDownTime && direction > 0) {
+			_rollRight = true;
+			_lastDashTime = Time.time;
+		}
+	}
+		
+
+	void Flip ()
+	{
+		Debug.Log (_playerGraphics.localScale.x);
+		direction *= -1;
+		_facingRight = !_facingRight;
+//		Vector3 theScale = playerGraphics.localScale;
+//		theScale.x *= -1;
+//		playerGraphics.localScale.x *= -1;
+		Vector3 theScale = transform.localScale;
+		theScale.x *= -1;
+		transform.localScale = theScale;
+	}
+
+	IEnumerator shootArrow ()
+	{
+		freeze = true;
+		_canShootArrow = false;
+		jump = false; // used to prevent user from juppming after shooting arrow because jump tapped before shooting arrow
+		yield return new WaitForSeconds (_arrowShootingFreezeTime);
+		jump = false; // used to prevent user from juppming after shooting arrow because jump tapped before shooting arrow
+		freeze = false;
+		_canShootArrow = true;
+	}
+
+	IEnumerator destroySelf ()
+	{
+		yield return new WaitForSeconds (respawnTime);
+		Transform.Destroy (transform.gameObject);
+	}
+		
+
+
+	/*=================== PUBLIC =====================*/
+
 	public void Death ()
 	{
 		if (!died) {
-			anim.SetTrigger ("Death");
+			_anim.SetTrigger ("Death");
 			// Play death music
 			backgroundMusic.Stop ();
 			audioEffects.clip = deathAudio;
 			audioEffects.Play ();
 			// Death bounce like in Mario
-			rigid.AddForce (new Vector2 (0, 400));
+			_rigidbody.AddForce (new Vector2 (0, 400));
 			Destroy (GetComponent<Collider2D> ());
 			died = true;
 		} 
@@ -300,35 +360,17 @@ public class PlayerControl : MonoBehaviour
 	public void Death (int bounceUpForce)
 	{
 		if (!died) {
-			anim.SetTrigger ("Death");
+			_anim.SetTrigger ("Death");
 			// Play death music
 			backgroundMusic.Stop ();
 			audioEffects.clip = deathAudio;
 			audioEffects.Play ();
 			// Death bounce like in Mario
-			rigid.AddForce (new Vector2 (0, bounceUpForce));
+			_rigidbody.AddForce (new Vector2 (0, bounceUpForce));
 			Destroy (GetComponent<Collider2D> ());
 			died = true;
 		} 
 	}
-
-
-	public void RollLeft ()
-	{
-		if ((Time.time - lastDashTime) > dashCoolDownTime && direction < 0) {
-			rollLeft = true;
-			lastDashTime = Time.time;
-		}
-	}
-
-	public void RollRight ()
-	{
-		if ((Time.time - lastDashTime) > dashCoolDownTime && direction > 0) {
-			rollRight = true;
-			lastDashTime = Time.time;
-		}
-	}
-
 
 	// Called by scene loader
 	public void EndScene (bool playEndSceneAudio)
@@ -339,37 +381,10 @@ public class PlayerControl : MonoBehaviour
 		if (playEndSceneAudio)
 			audioEffects.Play ();
 
-		playerGraphics.GetComponent<SpriteRenderer> ().enabled = false;
+		_playerGraphics.GetComponent<SpriteRenderer> ().enabled = false;
 
 		// Then freeze the player
-		rigid.isKinematic = true;
+		_rigidbody.isKinematic = true;
 		Destroy (GetComponent<Collider2D> ());
 	}
-
-	void Flip ()
-	{
-		Debug.Log(playerGraphics.localScale.x);
-		direction *= -1;
-		facingRight = !facingRight;
-//		Vector3 theScale = playerGraphics.localScale;
-//		theScale.x *= -1;
-//		playerGraphics.localScale.x *= -1;
-		Vector3 theScale = this.transform.localScale;
-		theScale.x *= -1;
-		this.transform.localScale = theScale;
-	}
-
-	IEnumerator ShootArrow ()
-	{
-		freeze = true;
-		yield return new WaitForSeconds (arrowShootingFreezeTime);
-		freeze = false;
-	}
-
-	IEnumerator DestroySelf ()
-	{
-		yield return new WaitForSeconds (respawnTime);
-		Transform.Destroy (transform.gameObject);
-	}
-
 }

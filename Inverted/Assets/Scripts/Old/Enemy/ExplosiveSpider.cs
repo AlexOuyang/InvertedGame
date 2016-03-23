@@ -78,7 +78,7 @@ public class ExplosiveSpider : MonoBehaviour
 				Instantiate (explosion, transform.position, Quaternion.identity);
 				// Notify the player to die
 				if (playerIsInExplosionRange) {
-						PlayerControl.player.Death ();
+						PlayerControl.Player.Death ();
 				}
 				Transform.Destroy (transform.gameObject);
 		}

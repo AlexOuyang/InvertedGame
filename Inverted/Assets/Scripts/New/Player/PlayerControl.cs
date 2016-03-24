@@ -1,7 +1,9 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-// This script is attached to the player
+/// <summary>
+/// Player control governs the player behavior.
+/// </summary>
 public class PlayerControl : MonoBehaviour
 {
 	// Static reference to the playerControl script
@@ -80,8 +82,10 @@ public class PlayerControl : MonoBehaviour
 
 	/*============= Public Objects =============*/
 
-	public GameObject arrow;
 	public GameObject jumpDust;
+	public GameObject arrow;
+	public GameObject bowLine;
+
 
 	// Used to launch the arrow
 	private Transform _arrowLauncher;
@@ -187,7 +191,6 @@ public class PlayerControl : MonoBehaviour
 		if (Input.GetKeyDown (KeyCode.X) && _canShootArrow) {
 			_anim.SetTrigger ("Shooting");
 			_shootArrow = true;
-//			StartCoroutine ("shootArrow");
 //			GameObject arrowShot = Instantiate (arrow, new Vector3 (_arrowLauncher.position.x, _arrowLauncher.position.y, _arrowLauncher.position.z), Quaternion.identity) as GameObject;
 //			arrowShot.GetComponent<ArrowShooting>().Flip(this.direction);
 		}
@@ -283,7 +286,7 @@ public class PlayerControl : MonoBehaviour
 				// Bowing mechanism
 				if (_shootArrow) {
 					_shootArrow = false;
-					StartCoroutine ("shootArrow");
+					StartCoroutine (shootArrow ());
 					// Bit shift the index of the layer to include only below collision layers
 					int collisionLayerMask = 1 << groundLayerIdx | 1 << enemyLayerIdx | 1 << objectLayerIdx;
 					Vector3 rayDirection = new Vector3 (this.direction, 0, 0);
@@ -292,9 +295,8 @@ public class PlayerControl : MonoBehaviour
 					if (hit.collider != null) {
 						float distance = Mathf.Abs (hit.point.x - _arrowLauncher.transform.position.x);
 						Debug.DrawRay (_arrowLauncher.transform.position, distance * rayDirection, Color.green, 3f, false);
-						// Instantiate arrow remainds
-						GameObject arrowShot = Instantiate (arrow, hit.point, Quaternion.identity) as GameObject;
-						arrowShot.GetComponent<ArrowRemains> ().Flip (this.direction);
+						// Instantiates arrow remainds and produces the bowline.
+						StartCoroutine (instantiateArrowRemainsAndArrowTrajectory (hit.point, distance));
 						Debug.Log ("Hit " + hit.collider.name + " with distance: " + distance);
 					}
 				}
@@ -361,9 +363,19 @@ public class PlayerControl : MonoBehaviour
 		_canShootArrow = true;
 	}
 
-	IEnumerator instantiateArrowRemains ()
+	IEnumerator instantiateArrowRemainsAndArrowTrajectory (Vector3 hitPos, float dist)
 	{
+		Debug.Log ("Shot");
 		yield return new WaitForSeconds (_arrowShootingBufferingTime);
+
+		GameObject trajectory = Instantiate (bowLine, hitPos, Quaternion.identity) as GameObject;
+		float scale_x = trajectory.GetComponent<Renderer> ().bounds.size.x;
+		Vector3 newScale = trajectory.transform.localScale;
+		newScale.x = (-1) * this.direction * dist * newScale.x / scale_x;
+		trajectory.transform.localScale = newScale;
+
+		GameObject arrowShot = Instantiate (arrow, hitPos, Quaternion.identity) as GameObject;
+		arrowShot.GetComponent<ArrowRemains> ().Flip (this.direction);
 	}
 
 	IEnumerator destroySelf ()

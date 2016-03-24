@@ -2,10 +2,11 @@
 using System.Collections;
 using UnityEditor;
 
-// Created by: Alex Chenxing Ouyang
-// This script is attached to the player and is used to detect swipe and tap on the right screen. (Since right screen
-// is designated for swiping and tapping and left screen is designated for movement control and CNController is used there)
-[InitializeOnLoad]
+/// <summary>
+/// Created by: Alex Chenxing Ouyang
+/// Touch input manager is attached to the player and is used to detect swipe and tap on the right screen. (Since right screen
+/// is designated for swiping and tapping and left screen is designated for movement control and CNController is used there)
+/// </summary>
 public class TouchInputManager : MonoBehaviour
 {
 	public static TouchInputManager touchInputManager;

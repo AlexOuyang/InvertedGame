@@ -1,10 +1,13 @@
 ﻿using UnityEngine;
 using System.Collections;
 
+/// <summary>
+/// Arrow remains plays the remains animation.
+/// </summary>
 public class ArrowRemains : MonoBehaviour
 {
-	private float direction = 1f;
-	private float lifeSpan = 5.0f;
+	private float _direction = 1f;
+	private float _lifeSpan = 5.0f;
 
 	// Use this for initialization
 	void Start ()
@@ -39,7 +42,7 @@ public class ArrowRemains : MonoBehaviour
 
 	IEnumerator destroySelf ()
 	{
-		yield return new WaitForSeconds (lifeSpan);
+		yield return new WaitForSeconds (_lifeSpan);
 		Transform.Destroy (transform.gameObject);
 	}
 
@@ -48,7 +51,7 @@ public class ArrowRemains : MonoBehaviour
 	 */
 	public void Flip (float direction)
 	{
-		this.direction = direction;
+		this._direction = direction;
 		Vector3 theScale = transform.localScale;
 		theScale.x = Mathf.Abs (theScale.x) * direction;
 		transform.localScale = theScale;

@@ -40,7 +40,11 @@ public class PlayerControl : MonoBehaviour
 	public float direction = 1.0f;
 	// The cool down time it takes for the player to reuse dash
 	public float dashCoolDownTime = 1.0f;
-
+	// These are the layer mask index of platform(ground), enemy and objects,
+	// only allow raycast to hit platform, objects and enemy
+	public int groundLayerIdx = 8;
+	public int enemyLayerIdx = 9;
+	public int objectLayerIdx = 10;
 
 	// Used for calculating the next dash time
 	private float _lastDashTime = 0;
@@ -52,6 +56,15 @@ public class PlayerControl : MonoBehaviour
 	// Used to control power ups
 	private bool _canRoll = true;
 	private bool _canCharge;
+	private bool _instantiateDustOnce = false;
+	// The amount of time player can not move when shooting the arrow
+	private float _arrowShootingFreezeTime = 0.6f;
+	// The amount of time it takes for the arrow remains and arrow trajectory to be produced after shooting starts
+	private float _arrowShootingBufferingTime = 0.3f;
+	// Used to restrict arrow shooting frequencies
+	private bool _canShootArrow = true;
+	// Used to allow shooting in FixedUpdate
+	private bool _shootArrow = false;
 
 
 	/*============= AudioClips =============*/
@@ -84,10 +97,6 @@ public class PlayerControl : MonoBehaviour
 	private Animator _anim;
 	private Rigidbody2D _rigidbody;
 
-	/*============= Others =============*/
-	private bool _instantiateDustOnce = false;
-	private float _arrowShootingFreezeTime = 0.6f;
-	private bool _canShootArrow = true;
 
 
 	void Awake ()
@@ -177,10 +186,10 @@ public class PlayerControl : MonoBehaviour
 
 		if (Input.GetKeyDown (KeyCode.X) && _canShootArrow) {
 			_anim.SetTrigger ("Shooting");
-			StartCoroutine ("shootArrow");
+			_shootArrow = true;
+//			StartCoroutine ("shootArrow");
 //			GameObject arrowShot = Instantiate (arrow, new Vector3 (_arrowLauncher.position.x, _arrowLauncher.position.y, _arrowLauncher.position.z), Quaternion.identity) as GameObject;
 //			arrowShot.GetComponent<ArrowShooting>().Flip(this.direction);
-
 		}
 
 		// Used to prevent jumping animation from overriding Shooting animation
@@ -271,14 +280,21 @@ public class PlayerControl : MonoBehaviour
 					_rollRight = false;
 				}
 
-				if (Input.GetKeyDown (KeyCode.X) && _canShootArrow) {
+				// Bowing mechanism
+				if (_shootArrow) {
+					_shootArrow = false;
+					StartCoroutine ("shootArrow");
+					// Bit shift the index of the layer to include only below collision layers
+					int collisionLayerMask = 1 << groundLayerIdx | 1 << enemyLayerIdx | 1 << objectLayerIdx;
 					Vector3 rayDirection = new Vector3 (this.direction, 0, 0);
 					Vector3 offset = new Vector3 (this.direction / 2, 0, 0);
-					RaycastHit2D hit = Physics2D.Raycast (_arrowLauncher.transform.position, (Vector2)rayDirection);
+					RaycastHit2D hit = Physics2D.Raycast (_arrowLauncher.transform.position, (Vector2)rayDirection, Mathf.Infinity, collisionLayerMask);
 					if (hit.collider != null) {
 						float distance = Mathf.Abs (hit.point.x - _arrowLauncher.transform.position.x);
-
-						Debug.DrawRay (_arrowLauncher.transform.position, rayDirection, Color.green, distance, false);
+						Debug.DrawRay (_arrowLauncher.transform.position, distance * rayDirection, Color.green, 3f, false);
+						// Instantiate arrow remainds
+						GameObject arrowShot = Instantiate (arrow, hit.point, Quaternion.identity) as GameObject;
+						arrowShot.GetComponent<ArrowRemains> ().Flip (this.direction);
 						Debug.Log ("Hit " + hit.collider.name + " with distance: " + distance);
 					}
 				}
@@ -343,6 +359,11 @@ public class PlayerControl : MonoBehaviour
 		jump = false; // used to prevent user from juppming after shooting arrow because jump tapped before shooting arrow
 		freeze = false;
 		_canShootArrow = true;
+	}
+
+	IEnumerator instantiateArrowRemains ()
+	{
+		yield return new WaitForSeconds (_arrowShootingBufferingTime);
 	}
 
 	IEnumerator destroySelf ()

@@ -1,28 +1,15 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class ArrowShooting : MonoBehaviour
+public class ArrowRemains : MonoBehaviour
 {
-	public float maxScale = 1000.0f;
-	public float speed = 100.0f;
-
-	public float direction = 1f;
+	private float direction = 1f;
 	private float lifeSpan = 5.0f;
-
-
-	private Vector3 originalPos;
-	private float originalScale;
-	private float endScale;
 
 	// Use this for initialization
 	void Start ()
 	{
-		originalPos = transform.position;
-		originalScale = transform.localScale.x;
-		endScale = originalScale;
-
-		StartCoroutine("destroySelf");
-	
+		StartCoroutine ("destroySelf");	
 	}
 	
 	// Update is called once per frame
@@ -39,20 +26,14 @@ public class ArrowShooting : MonoBehaviour
 //		}
 
 //		if (Input.GetKey (KeyCode.S)) {
-		transform.Translate (new Vector3 (direction, 0, 0) * Time.deltaTime * speed);
+//		transform.Translate (new Vector3 (direction, 0, 0) * Time.deltaTime * speed);
 //		}
 	
 	}
 
 	void OnCollisionEnter2D (Collision2D coll)
 	{
-		Debug.Log(coll.gameObject.name);
-		// If the arrow touches the platform, it will stop and stick into the wall
-		if(coll.gameObject.tag == "Platform")
-		{
-//			Destroy(col.gameObject);
-			Debug.Log("Hit");
-			speed = 0;
+		if (coll.gameObject.tag == "Platform") {
 		}
 	}
 
@@ -69,7 +50,7 @@ public class ArrowShooting : MonoBehaviour
 	{
 		this.direction = direction;
 		Vector3 theScale = transform.localScale;
-		theScale.x = Mathf.Abs(theScale.x) * direction;
+		theScale.x = Mathf.Abs (theScale.x) * direction;
 		transform.localScale = theScale;
 	}
 }

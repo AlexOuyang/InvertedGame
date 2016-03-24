@@ -108,7 +108,7 @@ public class PlayerControl : MonoBehaviour
 		else
 			Debug.Log ("No SpawnLocation found");
 
-		_arrowLauncher = transform.FindChild("ArrowLauncher");
+		_arrowLauncher = transform.FindChild ("ArrowLauncher");
 
 	}
 
@@ -178,8 +178,9 @@ public class PlayerControl : MonoBehaviour
 		if (Input.GetKeyDown (KeyCode.X) && _canShootArrow) {
 			_anim.SetTrigger ("Shooting");
 			StartCoroutine ("shootArrow");
-			GameObject arrowShot = Instantiate (arrow, new Vector3 (_arrowLauncher.position.x, _arrowLauncher.position.y, _arrowLauncher.position.z), Quaternion.identity) as GameObject;
-			arrowShot.GetComponent<ArrowShooting>().Flip(this.direction);
+//			GameObject arrowShot = Instantiate (arrow, new Vector3 (_arrowLauncher.position.x, _arrowLauncher.position.y, _arrowLauncher.position.z), Quaternion.identity) as GameObject;
+//			arrowShot.GetComponent<ArrowShooting>().Flip(this.direction);
+
 		}
 
 		// Used to prevent jumping animation from overriding Shooting animation
@@ -270,6 +271,18 @@ public class PlayerControl : MonoBehaviour
 					_rollRight = false;
 				}
 
+				if (Input.GetKeyDown (KeyCode.X) && _canShootArrow) {
+					Vector3 rayDirection = new Vector3 (this.direction, 0, 0);
+					Vector3 offset = new Vector3 (this.direction / 2, 0, 0);
+					RaycastHit2D hit = Physics2D.Raycast (_arrowLauncher.transform.position, (Vector2)rayDirection);
+					if (hit.collider != null) {
+						float distance = Mathf.Abs (hit.point.x - _arrowLauncher.transform.position.x);
+
+						Debug.DrawRay (_arrowLauncher.transform.position, rayDirection, Color.green, distance, false);
+						Debug.Log ("Hit " + hit.collider.name + " with distance: " + distance);
+					}
+				}
+
 
 			}
 		} else {
@@ -306,7 +319,7 @@ public class PlayerControl : MonoBehaviour
 			_lastDashTime = Time.time;
 		}
 	}
-		
+
 
 	void Flip ()
 	{

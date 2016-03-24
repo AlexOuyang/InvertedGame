@@ -39,11 +39,22 @@ public class ArrowShooting : MonoBehaviour
 //		}
 
 //		if (Input.GetKey (KeyCode.S)) {
-//		transform.Translate (new Vector3 (direction, 0, 0) * Time.deltaTime * speed);
+		transform.Translate (new Vector3 (direction, 0, 0) * Time.deltaTime * speed);
 //		}
 	
 	}
 
+	void OnCollisionEnter2D (Collision2D coll)
+	{
+		Debug.Log(coll.gameObject.name);
+		// If the arrow touches the platform, it will stop and stick into the wall
+		if(coll.gameObject.tag == "Platform")
+		{
+//			Destroy(col.gameObject);
+			Debug.Log("Hit");
+			speed = 0;
+		}
+	}
 
 	IEnumerator destroySelf ()
 	{
@@ -52,7 +63,7 @@ public class ArrowShooting : MonoBehaviour
 	}
 
 	/**
-	 * Used to flip the arrow to the correct direction. direction is 1 or -1
+	 * Used to flip the arrow to the correct direction. direction is either 1 or -1
 	 */
 	public void Flip (float direction)
 	{

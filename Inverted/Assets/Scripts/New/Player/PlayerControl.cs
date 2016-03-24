@@ -366,16 +366,19 @@ public class PlayerControl : MonoBehaviour
 	IEnumerator instantiateArrowRemainsAndArrowTrajectory (Vector3 hitPos, float dist)
 	{
 		Debug.Log ("Shot");
-		yield return new WaitForSeconds (_arrowShootingBufferingTime);
-
+		float offsetTime = 0.05f;
+		yield return new WaitForSeconds (_arrowShootingBufferingTime - offsetTime);
 		GameObject trajectory = Instantiate (bowLine, hitPos, Quaternion.identity) as GameObject;
 		float scale_x = trajectory.GetComponent<Renderer> ().bounds.size.x;
 		Vector3 newScale = trajectory.transform.localScale;
 		newScale.x = (-1) * this.direction * dist * newScale.x / scale_x;
 		trajectory.transform.localScale = newScale;
 
+		yield return new WaitForSeconds (offsetTime);
 		GameObject arrowShot = Instantiate (arrow, hitPos, Quaternion.identity) as GameObject;
 		arrowShot.GetComponent<ArrowRemains> ().Flip (this.direction);
+
+		Destroy (trajectory);
 	}
 
 	IEnumerator destroySelf ()

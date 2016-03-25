@@ -2,7 +2,7 @@
 using System.Collections;
 
 /// <summary>
-/// Arrow remains plays the remains animation.
+/// Arrow remains plays the remains animation, arrow remains provides a game play mechansim that allows the player to stand on top.
 /// </summary>
 public class ArrowRemains : MonoBehaviour
 {

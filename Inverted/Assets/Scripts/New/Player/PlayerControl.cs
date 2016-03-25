@@ -286,19 +286,7 @@ public class PlayerControl : MonoBehaviour
 				// Bowing mechanism
 				if (_shootArrow) {
 					_shootArrow = false;
-					StartCoroutine (shootArrow ());
-					// Bit shift the index of the layer to include only below collision layers
-					int collisionLayerMask = 1 << groundLayerIdx | 1 << enemyLayerIdx | 1 << objectLayerIdx;
-					Vector3 rayDirection = new Vector3 (this.direction, 0, 0);
-					Vector3 offset = new Vector3 (this.direction / 2, 0, 0);
-					RaycastHit2D hit = Physics2D.Raycast (_arrowLauncher.transform.position, (Vector2)rayDirection, Mathf.Infinity, collisionLayerMask);
-					if (hit.collider != null) {
-						float distance = Mathf.Abs (hit.point.x - _arrowLauncher.transform.position.x);
-						Debug.DrawRay (_arrowLauncher.transform.position, distance * rayDirection, Color.green, 3f, false);
-						// Instantiates arrow remainds and produces the bowline.
-						StartCoroutine (instantiateArrowRemainsAndArrowTrajectory (hit.point, distance));
-						Debug.Log ("Hit " + hit.collider.name + " with distance: " + distance);
-					}
+					StartCoroutine (bowing ());
 				}
 
 
@@ -352,7 +340,8 @@ public class PlayerControl : MonoBehaviour
 		transform.localScale = theScale;
 	}
 
-	IEnumerator shootArrow ()
+	// This governs the bowing freeze time
+	IEnumerator bowingFreeze ()
 	{
 		freeze = true;
 		_canShootArrow = false;
@@ -363,22 +352,38 @@ public class PlayerControl : MonoBehaviour
 		_canShootArrow = true;
 	}
 
-	IEnumerator instantiateArrowRemainsAndArrowTrajectory (Vector3 hitPos, float dist)
+
+	// Main bowing mechanism, instantiates arrow remainds and produces the bowline.
+	IEnumerator bowing ()
 	{
-		Debug.Log ("Shot");
+		StartCoroutine (bowingFreeze ());
+
 		float offsetTime = 0.05f;
 		yield return new WaitForSeconds (_arrowShootingBufferingTime - offsetTime);
-		GameObject trajectory = Instantiate (bowLine, hitPos, Quaternion.identity) as GameObject;
-		float scale_x = trajectory.GetComponent<Renderer> ().bounds.size.x;
-		Vector3 newScale = trajectory.transform.localScale;
-		newScale.x = (-1) * this.direction * dist * newScale.x / scale_x;
-		trajectory.transform.localScale = newScale;
 
-		yield return new WaitForSeconds (offsetTime);
-		GameObject arrowShot = Instantiate (arrow, hitPos, Quaternion.identity) as GameObject;
-		arrowShot.GetComponent<ArrowRemains> ().Flip (this.direction);
+		// Bit shift the index of the layer to include only below collision layers
+		int collisionLayerMask = 1 << groundLayerIdx | 1 << enemyLayerIdx | 1 << objectLayerIdx;
+		Vector3 rayDirection = new Vector3 (this.direction, 0, 0);
+		Vector3 offset = new Vector3 (this.direction / 2, 0, 0);
+		RaycastHit2D hit = Physics2D.Raycast (_arrowLauncher.transform.position, (Vector2)rayDirection, Mathf.Infinity, collisionLayerMask);
+		if (hit.collider != null) {
+			float distance = Mathf.Abs (hit.point.x - _arrowLauncher.transform.position.x);
+			Debug.DrawRay (_arrowLauncher.transform.position, distance * rayDirection, Color.green, 3f, false);
 
-		Destroy (trajectory);
+			// Create trajectory
+			GameObject trajectory = Instantiate (bowLine, hit.point, Quaternion.identity) as GameObject;
+			float scale_x = trajectory.GetComponent<Renderer> ().bounds.size.x;
+			Vector3 newScale = trajectory.transform.localScale;
+			newScale.x = (-1) * this.direction * distance * newScale.x / scale_x;
+			trajectory.transform.localScale = newScale;
+
+			// Create arrow remains
+			yield return new WaitForSeconds (offsetTime);
+			GameObject arrowShot = Instantiate (arrow, hit.point, Quaternion.identity) as GameObject;
+			arrowShot.GetComponent<ArrowRemains> ().Flip (this.direction);
+
+			Destroy (trajectory);
+		}
 	}
 
 	IEnumerator destroySelf ()

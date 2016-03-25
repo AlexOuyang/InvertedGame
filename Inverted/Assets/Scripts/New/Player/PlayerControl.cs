@@ -162,9 +162,9 @@ public class PlayerControl : MonoBehaviour
 			                        1 << LayerMask.NameToLayer ("Object")); 
 		grounded = grounded1 || grounded2;
 
-
-		if ((Input.GetButtonDown ("Jump") || Input.GetKeyDown (KeyCode.UpArrow) || Input.GetKeyDown (KeyCode.W) || TouchInputManager.touchInputManager.Tap)
-		    && (grounded || leftWallTouched || rightWallTouched))
+		// TouchInputManager.touchInputManager.Tap
+		if ((Input.GetButtonDown ("Jump") || Input.GetKeyDown (KeyCode.UpArrow) || Input.GetKeyDown (KeyCode.W))
+		    && (grounded))
 			jump = true;
 
 
@@ -444,5 +444,16 @@ public class PlayerControl : MonoBehaviour
 		// Then freeze the player
 		_rigidbody.isKinematic = true;
 		Destroy (GetComponent<Collider2D> ());
+	}
+
+	// Shoots arrow on UI button click
+	public void OnClickShoot() {
+		_anim.SetTrigger ("Shooting");
+		_shootArrow = true;
+	}
+
+	// Shoots arrow on UI button click
+	public void OnClickJump() {
+		jump = true;
 	}
 }

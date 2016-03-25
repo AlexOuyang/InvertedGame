@@ -1,6 +1,5 @@
 ﻿using UnityEngine;
 using System.Collections;
-using UnityEditor;
 
 /// <summary>
 /// Created by: Alex Chenxing Ouyang

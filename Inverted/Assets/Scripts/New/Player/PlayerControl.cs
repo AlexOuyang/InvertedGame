@@ -195,11 +195,7 @@ public class PlayerControl : MonoBehaviour
 //			arrowShot.GetComponent<ArrowShooting>().Flip(this.direction);
 		}
 
-		// Used to prevent jumping animation from overriding Shooting animation
-		if (freeze)
-			_anim.SetBool ("CanJump", false);
-		else
-			_anim.SetBool ("CanJump", true);
+
 		
 
 		// Cloaking ability change player color
@@ -343,6 +339,7 @@ public class PlayerControl : MonoBehaviour
 	// This governs the bowing freeze time
 	IEnumerator bowingFreeze ()
 	{
+		_anim.SetBool ("CanJump", false); // Used to prevent jumping animation from overriding Shooting animation
 		freeze = true;
 		_canShootArrow = false;
 		jump = false; // used to prevent user from juppming after shooting arrow because jump tapped before shooting arrow
@@ -350,6 +347,7 @@ public class PlayerControl : MonoBehaviour
 		jump = false; // used to prevent user from juppming after shooting arrow because jump tapped before shooting arrow
 		freeze = false;
 		_canShootArrow = true;
+		_anim.SetBool ("CanJump", true);
 	}
 
 
@@ -381,7 +379,7 @@ public class PlayerControl : MonoBehaviour
 			yield return new WaitForSeconds (offsetTime);
 
 			Quaternion groundNormal = Quaternion.FromToRotation (this.direction * Vector3.left, hit.normal);
-			float rotationOffsetMultiplier = Random.Range(3f, 6f); // create rotation to ground normal variations
+			float rotationOffsetMultiplier = Random.Range (3f, 6f); // create rotation to ground normal variations
 			groundNormal.z /= rotationOffsetMultiplier;
 			GameObject arrowShot = Instantiate (arrow, hit.point, groundNormal) as GameObject;
 			arrowShot.GetComponent<ArrowRemains> ().Flip (this.direction);
@@ -447,13 +445,18 @@ public class PlayerControl : MonoBehaviour
 	}
 
 	// Shoots arrow on UI button click
-	public void OnClickShoot() {
-		_anim.SetTrigger ("Shooting");
-		_shootArrow = true;
+	public void OnClickShoot ()
+	{
+		if (_canShootArrow) {
+			_anim.SetTrigger ("Shooting");
+			_shootArrow = true;
+		}
 	}
 
 	// Shoots arrow on UI button click
-	public void OnClickJump() {
-		jump = true;
+	public void OnClickJump ()
+	{
+		if (grounded)
+			jump = true;
 	}
 }

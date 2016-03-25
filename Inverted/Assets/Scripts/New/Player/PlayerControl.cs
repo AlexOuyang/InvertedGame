@@ -216,11 +216,13 @@ public class PlayerControl : MonoBehaviour
 				float mobile_control_h = CNJoystick.joystick.GetAxis ("Horizontal");
 				float h = (Mathf.Abs (mobile_control_h) > 0.05) ? mobile_control_h : Input.GetAxis ("Horizontal");
 
-//				if (h > 0.05f)
-//					h = 0.9f;
-//				else if (h < -0.05f)
-//					h = -0.9f;
-//				
+				if (h > 0)
+					h = 0.9f;
+				else if (h < 0)
+					h = -0.9f;
+				else
+					h = 0;
+				
 				_anim.SetFloat ("Speed", Mathf.Abs (h));
 
 
@@ -252,11 +254,10 @@ public class PlayerControl : MonoBehaviour
 				float playerVelocityY = _rigidbody.velocity.y;
 				//decrease the linearDrag if the player is jumping
 				if (grounded) {
-//					anim.SetBool ("Jump", false);
+					_anim.SetBool ("CanJump", true);
 					_anim.SetFloat ("PlayerJumpUpSpeed", 0f);
 					_rigidbody.drag = movingDrag;
 				} else {
-//						anim.SetBool ("Jump", true);
 					_anim.SetFloat ("PlayerJumpUpSpeed", playerVelocityY);
 					_rigidbody.drag = jumpingDrag;
 				}

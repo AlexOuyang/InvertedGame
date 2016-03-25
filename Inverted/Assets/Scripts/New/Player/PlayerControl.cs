@@ -379,7 +379,11 @@ public class PlayerControl : MonoBehaviour
 
 			// Create arrow remains
 			yield return new WaitForSeconds (offsetTime);
-			GameObject arrowShot = Instantiate (arrow, hit.point, Quaternion.identity) as GameObject;
+
+			Quaternion groundNormal = Quaternion.FromToRotation (this.direction * Vector3.left, hit.normal);
+			float rotationOffsetMultiplier = Random.Range(3f, 6f); // create rotation to ground normal variations
+			groundNormal.z /= rotationOffsetMultiplier;
+			GameObject arrowShot = Instantiate (arrow, hit.point, groundNormal) as GameObject;
 			arrowShot.GetComponent<ArrowRemains> ().Flip (this.direction);
 
 			Destroy (trajectory);

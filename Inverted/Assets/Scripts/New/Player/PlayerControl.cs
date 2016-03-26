@@ -102,6 +102,8 @@ public class PlayerControl : MonoBehaviour
 	private Rigidbody2D _rigidbody;
 
 
+	public float UI_Left = 0;
+	public float UI_Right = 0;
 
 	void Awake ()
 	{
@@ -180,11 +182,13 @@ public class PlayerControl : MonoBehaviour
 			rollLeft ();
 
 		if (grounded) {
+			_anim.SetBool ("IsJumping", false);
 			if (!_instantiateDustOnce) { // Create jump dust
 				Instantiate (jumpDust, new Vector3 (transform.position.x, transform.position.y - 1f, transform.position.z), Quaternion.identity);
 				_instantiateDustOnce = true;
 			}
 		} else {
+			_anim.SetBool ("IsJumping", true);
 			_instantiateDustOnce = false;
 		}
 
@@ -214,15 +218,22 @@ public class PlayerControl : MonoBehaviour
 		if (!died) {
 			if (!freeze) {
 				float mobile_control_h = CNJoystick.joystick.GetAxis ("Horizontal");
+
+//				// UI controls
+//				if (UI_Left == 1 && UI_Right == 0)
+//					mobile_control_h = -1;
+//				else if (UI_Left == 0 && UI_Right == 1)
+//					mobile_control_h = 1;
+//				else
+//					mobile_control_h = 0;
+				
 				float h = (Mathf.Abs (mobile_control_h) > 0.05) ? mobile_control_h : Input.GetAxis ("Horizontal");
 
-				if (h > 0)
-					h = 0.9f;
-				else if (h < 0)
-					h = -0.9f;
-				else
-					h = 0;
-				
+//				if (h > 0.05f)
+//					h = 0.9f;
+//				else if (h < -0.05f)
+//					h = -0.9f;
+//				
 				_anim.SetFloat ("Speed", Mathf.Abs (h));
 
 
@@ -254,10 +265,11 @@ public class PlayerControl : MonoBehaviour
 				float playerVelocityY = _rigidbody.velocity.y;
 				//decrease the linearDrag if the player is jumping
 				if (grounded) {
-					_anim.SetBool ("CanJump", true);
+//					anim.SetBool ("Jump", false);
 					_anim.SetFloat ("PlayerJumpUpSpeed", 0f);
 					_rigidbody.drag = movingDrag;
 				} else {
+//						anim.SetBool ("Jump", true);
 					_anim.SetFloat ("PlayerJumpUpSpeed", playerVelocityY);
 					_rigidbody.drag = jumpingDrag;
 				}
@@ -340,7 +352,7 @@ public class PlayerControl : MonoBehaviour
 	// This governs the bowing freeze time
 	IEnumerator bowingFreeze ()
 	{
-		_anim.SetBool ("CanJump", false); // Used to prevent jumping animation from overriding Shooting animation
+		_anim.SetBool ("IsShooting", true); // Used to prevent jumping animation from overriding Shooting animation
 		freeze = true;
 		_canShootArrow = false;
 		jump = false; // used to prevent user from juppming after shooting arrow because jump tapped before shooting arrow
@@ -348,7 +360,7 @@ public class PlayerControl : MonoBehaviour
 		jump = false; // used to prevent user from juppming after shooting arrow because jump tapped before shooting arrow
 		freeze = false;
 		_canShootArrow = true;
-		_anim.SetBool ("CanJump", true);
+		_anim.SetBool ("IsShooting", false);
 	}
 
 
@@ -459,5 +471,25 @@ public class PlayerControl : MonoBehaviour
 	{
 		if (grounded)
 			jump = true;
+	}
+
+	public void LeftButtonEnter ()
+	{
+		UI_Left = 1f;
+	}
+
+	public void LeftButtonExit ()
+	{
+		UI_Left = 0;
+	}
+
+	public void RightButtonEnter ()
+	{
+		UI_Right = 1f;
+	}
+
+	public void RightButtonExit ()
+	{
+		UI_Right = 0;
 	}
 }
